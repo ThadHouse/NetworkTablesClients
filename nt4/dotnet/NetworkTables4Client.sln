@@ -1,0 +1,28 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.0.31903.59
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "NetworkTables4Client", "src\NetworkTables4Client.csproj", "{942F47B2-A270-490F-AF0F-B57E9D1B23A7}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "NT4TestApp", "app\NT4TestApp.csproj", "{6343FB32-72F8-4003-A43C-7C3E0A80FEFA}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{942F47B2-A270-490F-AF0F-B57E9D1B23A7}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{942F47B2-A270-490F-AF0F-B57E9D1B23A7}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{942F47B2-A270-490F-AF0F-B57E9D1B23A7}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{942F47B2-A270-490F-AF0F-B57E9D1B23A7}.Release|Any CPU.Build.0 = Release|Any CPU
+		{6343FB32-72F8-4003-A43C-7C3E0A80FEFA}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{6343FB32-72F8-4003-A43C-7C3E0A80FEFA}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{6343FB32-72F8-4003-A43C-7C3E0A80FEFA}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{6343FB32-72F8-4003-A43C-7C3E0A80FEFA}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+EndGlobal
