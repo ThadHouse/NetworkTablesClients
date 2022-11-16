@@ -5,9 +5,16 @@ Console.WriteLine("Hello, World!");
 
 var socket = await SocketConnector.ConnectAsync("localhost", 5810, false, "HelloWorld");
 
+//socket.WriteChannel.Complete();
+
+//await socket.DisposeAsync();
+
 while (true) {
-    var m = await socket.ReadChannel.ReadAsync();
+    using var m = await socket.ReadChannel.ReadAsync();
     Console.WriteLine(m.MessageType);
+    if (m.MessageType == ReceiveMessageType.Disconnected) {
+        break;
+    }
 }
 
-Console.WriteLine("Connected!");
+await socket.DisposeAsync();
