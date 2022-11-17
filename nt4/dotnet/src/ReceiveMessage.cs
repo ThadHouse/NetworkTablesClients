@@ -5,11 +5,24 @@ using MessagePack;
 
 public readonly struct ReceiveMessage : IDisposable
 {
+    public readonly struct BinaryMessageEnumerable {
+        private readonly ReadOnlySequence<byte> data;
+
+        public BinaryMessageEnumerable(ReadOnlySequence<byte> data)
+        {
+            this.data = data;
+        }
+
+        public BinaryMessageEnumerator GetEnumerator() {
+            return new BinaryMessageEnumerator(data);
+        }
+    }
+
     public ref struct BinaryMessageEnumerator
     {
         private MessagePackReader reader;
 
-        public BinaryMessageEnumerator(ReadOnlyMemory<byte> data) {
+        public BinaryMessageEnumerator(ReadOnlySequence<byte> data) {
             reader = new MessagePackReader(data);
         }
 
@@ -53,8 +66,5 @@ public readonly struct ReceiveMessage : IDisposable
         memoryOwner?.Dispose();
     }
 
-    public BinaryMessageEnumerator GetEnumerator()
-    {
-        return new BinaryMessageEnumerator(memory);
-    }
+    public BinaryMessageEnumerable Binary => new BinaryMessageEnumerable(new ReadOnlySequence<byte>(memory));
 }

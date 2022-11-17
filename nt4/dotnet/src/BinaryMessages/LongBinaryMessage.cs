@@ -1,7 +1,8 @@
 using MessagePack;
 
 [MessagePackObject]
-public readonly struct LongBinaryMessage {
+public readonly struct LongBinaryMessage
+{
     public LongBinaryMessage(long id, long timestamp, long value)
     {
         Id = id;
@@ -10,11 +11,11 @@ public readonly struct LongBinaryMessage {
     }
 
     [Key(0)]
-    public long Id {get;}
+    public long Id { get; }
     [Key(1)]
-    public long Timestamp {get;}
+    public long Timestamp { get; }
     [Key(2)]
-    public byte Type {get;} = 2;
+    public byte Type { get; } = 2;
     [Key(3)]
-    public long Value {get;}
+    public long Value { get; }
 }
