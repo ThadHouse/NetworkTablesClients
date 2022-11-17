@@ -1,6 +1,9 @@
 ﻿using System.Buffers;
+using System.IO.Pipelines;
 using System.Net.WebSockets;
 using System.Threading.Channels;
+using CommunityToolkit.HighPerformance;
+using CommunityToolkit.HighPerformance.Buffers;
 
 public class SocketConnector : IAsyncDisposable
 {
@@ -83,7 +86,7 @@ public class SocketConnector : IAsyncDisposable
             while (true)
             {
                 using var message = await writeChannel.Reader.ReadAsync();
-                await ws.SendAsync(message.Memory, message.MessageType, true, default);
+                await ws.SendAsync(message.Buffer.WrittenMemory, message.MessageType, true, default);
             }
         }
         catch

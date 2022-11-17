@@ -1,23 +1,20 @@
 using System.Buffers;
 using System.Net.WebSockets;
+using CommunityToolkit.HighPerformance.Buffers;
 
 public readonly struct SendMessage : IDisposable
 {
     public WebSocketMessageType MessageType {get;}
 
-    private readonly IMemoryOwner<byte> memoryOwner;
-    private readonly Memory<byte> memory;
+    public ArrayPoolBufferWriter<byte> Buffer {get;}
 
-    public ReadOnlyMemory<byte> Memory => memory;
-
-    public SendMessage(WebSocketMessageType type, IMemoryOwner<byte> memoryOwner, Memory<byte> memory) {
+    public SendMessage(WebSocketMessageType type, ArrayPoolBufferWriter<byte> memoryOwner) {
         MessageType = type;
-        this.memoryOwner = memoryOwner;
-        this.memory = memory;
+        this.Buffer = memoryOwner;
     }
 
     public void Dispose()
     {
-        memoryOwner.Dispose();
+        Buffer.Dispose();
     }
 }
