@@ -1,10 +1,46 @@
 using System.Buffers;
 using System.Collections;
 using System.Net.WebSockets;
+using System.Text.Json;
 using MessagePack;
 
 public readonly struct ReceiveMessage : IDisposable
 {
+    public readonly struct TextMessageEnumerable {
+        private readonly ReadOnlySequence<byte> data;
+
+        public TextMessageEnumerable(ReadOnlySequence<byte> data)
+        {
+            this.data = data;
+        }
+
+        public TextMessageEnumerator GetEnumerator() {
+            return new TextMessageEnumerator(data);
+        }
+    }
+
+    public ref struct TextMessageEnumerator
+    {
+        private ReadOnlySequence<byte> data;
+
+        public TextMessageEnumerator(ReadOnlySequence<byte> data) {
+            this.data = data;
+        }
+
+        public JsonDocument Current { get; private set; } = default!;
+
+        public bool MoveNext()
+        {
+            if (data.IsEmpty) {
+                return false;
+            }
+            Utf8JsonReader reader = new Utf8JsonReader(data);
+            Current = JsonDocument.ParseValue(ref reader);
+            data = data.Slice(reader.Position);
+            return true;
+        }
+    }
+
     public readonly struct BinaryMessageEnumerable {
         private readonly ReadOnlySequence<byte> data;
 
@@ -63,8 +99,11 @@ public readonly struct ReceiveMessage : IDisposable
 
     public void Dispose()
     {
+        var reader = new Utf8JsonReader(new ReadOnlySequence<byte>(memory));
         memoryOwner?.Dispose();
     }
 
     public BinaryMessageEnumerable Binary => new BinaryMessageEnumerable(new ReadOnlySequence<byte>(memory));
+
+    public TextMessageEnumerable Text => new TextMessageEnumerable(new ReadOnlySequence<byte>(memory));
 }
