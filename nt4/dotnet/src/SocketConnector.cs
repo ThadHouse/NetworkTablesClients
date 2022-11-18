@@ -1,6 +1,7 @@
 ﻿using System.Buffers;
 using System.IO.Pipelines;
 using System.Net.WebSockets;
+using System.Runtime.InteropServices;
 using System.Threading.Channels;
 using CommunityToolkit.HighPerformance;
 using CommunityToolkit.HighPerformance.Buffers;
@@ -16,13 +17,13 @@ public class SocketConnector : IAsyncDisposable
             while (true)
             {
                 token.ThrowIfCancellationRequested();
-                var rent = MemoryPool<byte>.Shared.Rent(MaxBufferSize);
-                var buffer = rent.Memory;
-                var totalCount = 0;
+                var rent = ArrayPool<byte>.Shared.Rent(MaxBufferSize);
+                var offset = 0;
                 while (true)
                 {
-                    var result = await ws.ReceiveAsync(buffer, token);
-                    totalCount += result.Count;
+                    var segment = new ArraySegment<byte>(rent, offset, MaxBufferSize - offset);
+                    var result = await ws.ReceiveAsync(segment, token);
+                    offset += result.Count;
                     if (result.EndOfMessage)
                     {
                         ReceiveMessage msg;
@@ -35,10 +36,12 @@ public class SocketConnector : IAsyncDisposable
                         else
                         {
                             var recvMessageType = result.MessageType is WebSocketMessageType.Binary ? ReceiveMessageType.Binary : ReceiveMessageType.Text;
-                            msg = new ReceiveMessage(recvMessageType, rent, rent.Memory.Slice(0, totalCount));
+                            msg = new ReceiveMessage(recvMessageType, rent, rent.AsMemory().Slice(0, offset));
                         }
                         await readChannel.Writer.WriteAsync(msg, token);
                         break;
+                    } else {
+
                     }
                 }
             }
@@ -86,7 +89,10 @@ public class SocketConnector : IAsyncDisposable
             while (true)
             {
                 using var message = await writeChannel.Reader.ReadAsync();
-                await ws.SendAsync(message.Buffer.WrittenMemory, message.MessageType, true, default);
+                if (!MemoryMarshal.TryGetArray(message.Buffer.WrittenMemory, out var segment)) {
+                    throw new InvalidOperationException("Bad Memory Type");
+                }
+                await ws.SendAsync(segment, message.MessageType, true, default);
             }
         }
         catch

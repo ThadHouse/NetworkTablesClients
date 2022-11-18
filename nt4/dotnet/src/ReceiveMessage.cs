@@ -87,11 +87,11 @@ public readonly struct ReceiveMessage : IDisposable
 
     public ReceiveMessageType MessageType {get;}
 
-    private readonly IMemoryOwner<byte>? memoryOwner;
+    private readonly byte[]? memoryOwner;
 
     private readonly Memory<byte> memory;
 
-    public ReceiveMessage(ReceiveMessageType type, IMemoryOwner<byte>? memoryOwner, Memory<byte> memory) {
+    public ReceiveMessage(ReceiveMessageType type, byte[]? memoryOwner, Memory<byte> memory) {
         MessageType = type;
         this.memoryOwner = memoryOwner;
         this.memory = memory;
@@ -100,7 +100,9 @@ public readonly struct ReceiveMessage : IDisposable
     public void Dispose()
     {
         var reader = new Utf8JsonReader(new ReadOnlySequence<byte>(memory));
-        memoryOwner?.Dispose();
+        if (memoryOwner != null) {
+            ArrayPool<byte>.Shared.Return(memoryOwner);
+        }
     }
 
     public BinaryMessageEnumerable Binary => new BinaryMessageEnumerable(new ReadOnlySequence<byte>(memory));
