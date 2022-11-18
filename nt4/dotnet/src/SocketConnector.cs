@@ -1,10 +1,8 @@
 ﻿using System.Buffers;
-using System.IO.Pipelines;
 using System.Net.WebSockets;
 using System.Runtime.InteropServices;
+using System.Text.Json;
 using System.Threading.Channels;
-using CommunityToolkit.HighPerformance;
-using CommunityToolkit.HighPerformance.Buffers;
 
 public class SocketConnector : IAsyncDisposable
 {
@@ -29,14 +27,21 @@ public class SocketConnector : IAsyncDisposable
                         ReceiveMessage msg;
                         if (result.MessageType is WebSocketMessageType.Close)
                         {
-                            msg = new ReceiveMessage(ReceiveMessageType.Disconnected, null, null);
+                            ArrayPool<byte>.Shared.Return(rent);
+                            msg = new ReceiveMessage();
+                            await readChannel.Writer.WriteAsync(msg);
                             readChannel.Writer.Complete();
                             return;
                         }
+                        else if (result.MessageType is WebSocketMessageType.Text)
+                        {
+                            var doc = JsonDocument.Parse(new ReadOnlyMemory<byte>(rent, 0, offset));
+                            ArrayPool<byte>.Shared.Return(rent);
+                            msg = new ReceiveMessage(doc);
+                        }
                         else
                         {
-                            var recvMessageType = result.MessageType is WebSocketMessageType.Binary ? ReceiveMessageType.Binary : ReceiveMessageType.Text;
-                            msg = new ReceiveMessage(recvMessageType, rent, rent.AsMemory().Slice(0, offset));
+                            msg = new ReceiveMessage(rent, rent.AsMemory().Slice(0, offset));
                         }
                         await readChannel.Writer.WriteAsync(msg, token);
                         break;
@@ -48,7 +53,7 @@ public class SocketConnector : IAsyncDisposable
         }
         catch
         {
-            await readChannel.Writer.WriteAsync(new ReceiveMessage(ReceiveMessageType.Disconnected, null, null));
+            await readChannel.Writer.WriteAsync(new ReceiveMessage());
             readChannel.Writer.Complete();
         }
     }

@@ -1,46 +1,9 @@
 using System.Buffers;
-using System.Collections;
-using System.Net.WebSockets;
 using System.Text.Json;
 using MessagePack;
 
 public readonly struct ReceiveMessage : IDisposable
 {
-    public readonly struct TextMessageEnumerable {
-        private readonly ReadOnlySequence<byte> data;
-
-        public TextMessageEnumerable(ReadOnlySequence<byte> data)
-        {
-            this.data = data;
-        }
-
-        public TextMessageEnumerator GetEnumerator() {
-            return new TextMessageEnumerator(data);
-        }
-    }
-
-    public ref struct TextMessageEnumerator
-    {
-        private ReadOnlySequence<byte> data;
-
-        public TextMessageEnumerator(ReadOnlySequence<byte> data) {
-            this.data = data;
-        }
-
-        public JsonDocument Current { get; private set; } = default!;
-
-        public bool MoveNext()
-        {
-            if (data.IsEmpty) {
-                return false;
-            }
-            Utf8JsonReader reader = new Utf8JsonReader(data);
-            Current = JsonDocument.ParseValue(ref reader);
-            data = data.Slice(reader.Position);
-            return true;
-        }
-    }
-
     public readonly struct BinaryMessageEnumerable {
         private readonly ReadOnlySequence<byte> data;
 
@@ -80,26 +43,39 @@ public readonly struct ReceiveMessage : IDisposable
             ReadOnlySequence<byte> data = reader.ReadRaw();
             Current = new ReadBinaryMessage(topicId, timestamp, type, data);
             return true;
-            // Try to read a value
         }
     }
-
 
     public ReceiveMessageType MessageType {get;}
 
     private readonly byte[]? memoryOwner;
+    private readonly JsonDocument? text;
 
     private readonly Memory<byte> memory;
 
-    public ReceiveMessage(ReceiveMessageType type, byte[]? memoryOwner, Memory<byte> memory) {
-        MessageType = type;
+    public ReceiveMessage(byte[] memoryOwner, Memory<byte> memory) {
+        MessageType = ReceiveMessageType.Binary;
         this.memoryOwner = memoryOwner;
         this.memory = memory;
+        this.text = null;
+    }
+
+    public ReceiveMessage() {
+        MessageType = ReceiveMessageType.Disconnected;
+        this.memoryOwner = null;
+        this.text = null;
+        this.memory = default;
+    }
+
+    public ReceiveMessage(JsonDocument document) {
+        MessageType = ReceiveMessageType.Text;
+        this.memoryOwner = null;
+        this.memory = default;
+        this.text = document;
     }
 
     public void Dispose()
     {
-        var reader = new Utf8JsonReader(new ReadOnlySequence<byte>(memory));
         if (memoryOwner != null) {
             ArrayPool<byte>.Shared.Return(memoryOwner);
         }
@@ -107,5 +83,5 @@ public readonly struct ReceiveMessage : IDisposable
 
     public BinaryMessageEnumerable Binary => new BinaryMessageEnumerable(new ReadOnlySequence<byte>(memory));
 
-    public TextMessageEnumerable Text => new TextMessageEnumerable(new ReadOnlySequence<byte>(memory));
+    public JsonDocument Text => text!;
 }
